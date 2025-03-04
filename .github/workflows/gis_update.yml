@@ -1,4 +1,4 @@
-name: Fetch GIS Data and Update Google Sheet
+name: Fetch GIS Data and Update Google BigQuery
 
 on:
   schedule:
@@ -23,6 +23,7 @@ jobs:
       - name: Run GIS Update Script
         env:
           GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
-          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          PROJECT_ID: ${{ secrets.PROJECT_ID }}  # Add PROJECT_ID
+          DATASET_ID: ${{ secrets.DATASET_ID }}  # Add DATASET_ID
           GIS_REST_URL: ${{ secrets.GIS_REST_URL }}
-        run: python gis_to_sheets.py
+        run: python gis_to_bigquery.py
