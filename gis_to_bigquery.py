@@ -119,9 +119,6 @@ def fetch_gis_data():
 
 def update_bigquery(all_data):
     client = bigquery.Client(credentials=creds, project=PROJECT_ID)
-
-    # Generate schema dynamically based on the GIS data
-    schema = create_dynamic_schema(all_data)
     
     table_ref = client.dataset(DATASET_ID).table(TABLE_ID)
 
@@ -129,7 +126,6 @@ def update_bigquery(all_data):
         table = client.get_table(table_ref)  # Get table metadata
         print(f"Table {TABLE_ID} already exists.")
     except Exception as e:
-        # If the table doesn't exist, we can create it using dynamic schema
         table = bigquery.Table(table_ref, schema=schema)
         table = client.create_table(table)  # Create the table
         print(f"Table {TABLE_ID} created successfully.")
