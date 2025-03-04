@@ -2,20 +2,18 @@ import os
 import json
 import requests
 import time
+import pandas as pd
 from google.oauth2.service_account import Credentials
-from google.cloud import bigquery, storage
+from google.cloud import bigquery
 from requests.exceptions import RequestException
 from google.api_core.exceptions import GoogleAPICallError, NotFound, Forbidden
-import tempfile
-
 
 # Load credentials from environment variables
 service_account_info = json.loads(os.getenv("GCP_SERVICE_ACCOUNT_JSON"))
 creds = Credentials.from_service_account_info(
     service_account_info,
     scopes=["https://www.googleapis.com/auth/cloud-platform",  # Broadest scope for all GCP services
-            "https://www.googleapis.com/auth/bigquery",  # For BigQuery
-            "https://www.googleapis.com/auth/devstorage.full_control"]  # For Google Cloud Storage
+            "https://www.googleapis.com/auth/bigquery"]  # For BigQuery
 )
 
 # BigQuery setup
@@ -118,14 +116,25 @@ def fetch_gis_data():
             break
 
     if all_data:
-        update_bigquery(all_data)
+        save_to_csv(all_data)
     else:
         print("No GIS data found to update.")
 
-import tempfile
-import os
 
-def update_bigquery(all_data):
+def save_to_csv(all_data):
+    # Convert data to DataFrame
+    df = pd.DataFrame(all_data)
+
+    # Save DataFrame to CSV
+    local_csv_path = "/tmp/gis_data.csv"  # Temporary path for CSV file
+    df.to_csv(local_csv_path, index=False)
+
+    print(f"Data saved as CSV at {local_csv_path}")
+    update_bigquery_from_csv(local_csv_path)
+
+
+def update_bigquery_from_csv(csv_file_path):
+    # Load the CSV file into BigQuery
     client = bigquery.Client(credentials=creds, project=PROJECT_ID)
     table_ref = bigquery.TableReference.from_string(f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}")
 
@@ -138,50 +147,25 @@ def update_bigquery(all_data):
         table = client.create_table(table)  # Create the table
         print(f"Table {TABLE_ID} created successfully.")
 
-    # Prepare data for insertion
-    rows_to_insert = [{key: record[key] for key in record} for record in all_data]
+    # Load data from CSV to BigQuery
+    job_config = bigquery.LoadJobConfig(
+        schema=schema,
+        source_format=bigquery.SourceFormat.CSV,
+        skip_leading_rows=1,  # Skip header row
+        autodetect=True,  # Automatically detect schema
+    )
 
-    # Save the rows to a temporary JSON file
-    with tempfile.NamedTemporaryFile(delete=False, mode="w", newline="") as temp_file:
-        temp_file_path = temp_file.name
-        # Save the data as JSON in the temporary file
-        json.dump(rows_to_insert, temp_file)
-
-    # Load data from the temporary file into BigQuery
-    try:
-        # Create a URI pointing to the temporary file
-        uri = f"gs://{PROJECT_ID}/temp/{os.path.basename(temp_file_path)}"
-        
-        # Upload the file to Google Cloud Storage
-        storage_client = storage.Client(credentials=creds)
-        bucket_name = "improve_detroit_storage"
-        bucket = storage_client.bucket(bucket_name)
-        blob = bucket.blob(f"temp/{os.path.basename(temp_file_path)}")
-        blob.upload_from_filename(temp_file_path)
-
-        # Load data into BigQuery from the Google Cloud Storage URI
-        job_config = bigquery.LoadJobConfig(
-            schema=schema,
-            source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
+    with open(csv_file_path, "rb") as source_file:
+        load_job = client.load_table_from_file(
+            source_file, table_ref, job_config=job_config
         )
-        
-        load_job = client.load_table_from_uri(
-            uri,
-            table_ref,
-            job_config=job_config
-        )  # Make sure to pass the job config for proper schema handling
+        load_job.result()  # Wait for the job to complete
 
-        load_job.result()  # Wait for the load job to complete
-        print(f"Data loaded successfully from {uri} to BigQuery!")
+    print(f"Data loaded successfully from {csv_file_path} to BigQuery!")
 
-    except Exception as e:
-        print(f"Error loading data from file to BigQuery: {e}")
-    finally:
-        # Clean up the temporary file
-        os.remove(temp_file_path)
-
+    # Clean up the temporary CSV file
+    os.remove(csv_file_path)
 
 
 if __name__ == "__main__":
     fetch_gis_data()
-
