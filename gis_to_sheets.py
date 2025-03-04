@@ -58,15 +58,17 @@ def safe_request(url, params, retries=3, delay=2):
     return None
 
 
-def safe_sheet_append(sheet, row, retries=3, delay=2):
+def safe_sheet_append(sheet, row, retries=3, delay=5):
     for attempt in range(retries):
         try:
             sheet.append_row(row)
+            time.sleep(1)  # Add delay to avoid quota exhaustion
             return True
         except Exception as e:
             print(f"Failed to append row: {e}. Retrying... ({attempt + 1}/{retries})")
             time.sleep(delay)
     return False
+
 
 def fetch_gis_data():
     all_data = []
@@ -100,15 +102,16 @@ def update_google_sheet(all_data):
     if all_data:
         headers = list(all_data[0].keys())  # Extract headers from the first data record
         sheet.append_row(headers)  # Add column headers
-
-        for record in all_data:
-            row = [record.get(header, '') for header in headers]
-            if not safe_sheet_append(sheet, row):
-                print(f"Failed to append row: {row}. Skipping.")
+        
+        values = [[record.get(header, '') for header in headers] for record in all_data]
+        
+        # Use batch_update to insert all rows at once
+        sheet.append_rows(values)  # Efficient bulk insert
         
         print(f"GIS Data Updated Successfully with {len(all_data)} records!")
     else:
         print("No GIS data found to update.")
+
 
 if __name__ == "__main__":
     fetch_gis_data()
