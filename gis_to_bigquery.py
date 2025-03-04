@@ -5,6 +5,8 @@ import time
 from google.oauth2.service_account import Credentials
 from google.cloud import bigquery
 from requests.exceptions import RequestException
+from google.api_core.exceptions import GoogleAPICallError, NotFound, Forbidden
+
 
 # Load credentials from environment variables
 service_account_info = json.loads(os.getenv("GCP_SERVICE_ACCOUNT_JSON"))
@@ -119,29 +121,31 @@ def fetch_gis_data():
 
 def update_bigquery(all_data):
     client = bigquery.Client(credentials=creds, project=PROJECT_ID)
-    
-    table_ref = client.dataset(DATASET_ID).table(TABLE_ID)
+    table_ref = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 
     try:
         table = client.get_table(table_ref)  # Get table metadata
         print(f"Table {TABLE_ID} already exists.")
-    except Exception as e:
+    except NotFound:
+        print(f"Table {TABLE_ID} not found. Creating it...")
         table = bigquery.Table(table_ref, schema=schema)
         table = client.create_table(table)  # Create the table
         print(f"Table {TABLE_ID} created successfully.")
 
     # Prepare data for insertion
-    rows_to_insert = []
-    for record in all_data:
-        row = {key: record.get(key, None) for key in record.keys()}
-        rows_to_insert.append(row)
+    rows_to_insert = [{key: record.get(key, None) for key in record.keys()} for record in all_data]
 
     # Insert data into BigQuery table
-    errors = client.insert_rows_json(table, rows_to_insert)
-    if errors == []:
-        print(f"Data inserted into BigQuery table {DATASET_ID}.{TABLE_ID} successfully!")
-    else:
-        print(f"Errors occurred while inserting data into BigQuery: {errors}")
+    try:
+        errors = client.insert_rows_json(table, rows_to_insert)
+        if not errors:
+            print(f"Data inserted into BigQuery table {DATASET_ID}.{TABLE_ID} successfully!")
+        else:
+            print(f"Errors occurred while inserting data into BigQuery: {errors}")
+    except GoogleAPICallError as e:
+        print(f"BigQuery API Error: {e}")
+    except Forbidden:
+        print(f"Permission error! Ensure your service account has BigQuery write access.")
 
 if __name__ == "__main__":
     fetch_gis_data()
