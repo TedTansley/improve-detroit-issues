@@ -49,34 +49,31 @@ params = {
     "resultRecordCount": 1000,  # Records per request
 }
 
-def create_dynamic_schema(features):
-    """Create schema dynamically based on the GIS data."""
-    if not features:
-        return []
+schema = [
+    bigquery.SchemaField("ID", "INTEGER"),
+    bigquery.SchemaField("Status", "STRING"),
+    bigquery.SchemaField("Request_Type_Title", "STRING"),
+    bigquery.SchemaField("Description", "STRING"),
+    bigquery.SchemaField("Web_Url", "STRING"),
+    bigquery.SchemaField("Report_Method", "STRING"),
+    bigquery.SchemaField("Priority_Code", "INTEGER"),
+    bigquery.SchemaField("Created_At", "TIMESTAMP"),
+    bigquery.SchemaField("Acknowledged_At", "TIMESTAMP"),
+    bigquery.SchemaField("Closed_At", "TIMESTAMP"),
+    bigquery.SchemaField("Reopened_At", "TIMESTAMP"),
+    bigquery.SchemaField("Updated_At", "TIMESTAMP"),
+    bigquery.SchemaField("Days_to_Close", "INTEGER"),
+    bigquery.SchemaField("Canonical_Issue_ID", "INTEGER"),
+    bigquery.SchemaField("Address", "STRING"),
+    bigquery.SchemaField("Neighborhood", "STRING"),
+    bigquery.SchemaField("Council_District", "INTEGER"),
+    bigquery.SchemaField("Latitude", "FLOAT"),
+    bigquery.SchemaField("Longitude", "FLOAT"),
+    bigquery.SchemaField("Address_ID", "INTEGER"),
+    bigquery.SchemaField("ObjectId", "INTEGER"),
+    bigquery.SchemaField("Zip_Code", "STRING")
+]
 
-    # Grab the first feature's attributes to build the schema
-    first_record = features[0]["attributes"]
-    schema = []
-
-    for key, value in first_record.items():
-        if isinstance(value, int):
-            schema.append(bigquery.SchemaField(key, "INTEGER"))
-        elif isinstance(value, float):
-            schema.append(bigquery.SchemaField(key, "FLOAT"))
-        elif isinstance(value, bool):
-            schema.append(bigquery.SchemaField(key, "BOOLEAN"))
-        elif isinstance(value, str):
-            schema.append(bigquery.SchemaField(key, "STRING"))
-        elif isinstance(value, dict):
-            schema.append(bigquery.SchemaField(key, "STRING"))  # Or use 'JSON' if preferred
-        elif isinstance(value, list):
-            schema.append(bigquery.SchemaField(key, "STRING"))  # Treat lists as strings or JSON
-        elif isinstance(value, type(None)):
-            schema.append(bigquery.SchemaField(key, "STRING"))  # Handle nulls as string
-        else:
-            schema.append(bigquery.SchemaField(key, "STRING"))  # Default to string
-
-    return schema
 
 def safe_request(url, params, retries=3, delay=2):
     for attempt in range(retries):
