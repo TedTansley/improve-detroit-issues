@@ -2,3 +2,4 @@ google-cloud-bigquery
 requests
 pandas
 google-auth
+google-cloud-storage
