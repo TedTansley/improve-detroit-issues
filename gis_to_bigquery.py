@@ -154,7 +154,8 @@ def update_bigquery(all_data):
         
         # Upload the file to Google Cloud Storage
         storage_client = storage.Client(credentials=creds)
-        bucket = storage_client.bucket(f"{PROJECT_ID}")
+        bucket_name = "improve_detroit_storage"
+        bucket = storage_client.bucket(bucket_name)
         blob = bucket.blob(f"temp/{os.path.basename(temp_file_path)}")
         blob.upload_from_filename(temp_file_path)
 
