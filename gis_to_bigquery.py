@@ -46,7 +46,7 @@ params = {
     "geometryType": "esriGeometryEnvelope",
     "geometry": None,  # Specify geometry if needed
     "inSR": "102100",
-    "outFields": "*",  # Fetch all fields
+    "outFields": "ID,Status,Request_Type_Title,Report_Method,Created_At,Acknowledged_At,Closed_At,Reopened_At,Updated_At,Days_to_Close,Address,Neighborhood,Council_District,Latitude,Longitude,ObjectId,Zip_Code",    
     "orderByFields": "objectid ASC",
     "outSR": "102100",
     "resultRecordCount": 1000,  # Records per request
@@ -56,24 +56,18 @@ schema = [
     bigquery.SchemaField("ID", "INTEGER"),
     bigquery.SchemaField("Status", "STRING"),
     bigquery.SchemaField("Request_Type_Title", "STRING"),
-    bigquery.SchemaField("Description", "STRING"),
-    bigquery.SchemaField("Web_Url", "STRING"),
     bigquery.SchemaField("Report_Method", "STRING"),
-    bigquery.SchemaField("Priority_Code", "INTEGER"),
     bigquery.SchemaField("Created_At", "TIMESTAMP"),
     bigquery.SchemaField("Acknowledged_At", "TIMESTAMP"),
     bigquery.SchemaField("Closed_At", "TIMESTAMP"),
     bigquery.SchemaField("Reopened_At", "TIMESTAMP"),
     bigquery.SchemaField("Updated_At", "TIMESTAMP"),
-    bigquery.SchemaField("Days_to_Close", "INTEGER"),
-    bigquery.SchemaField("Canonical_Issue_ID", "INTEGER"),
+    bigquery.SchemaField("Days_to_Close", "NUMERIC"),
     bigquery.SchemaField("Address", "STRING"),
     bigquery.SchemaField("Neighborhood", "STRING"),
     bigquery.SchemaField("Council_District", "INTEGER"),
     bigquery.SchemaField("Latitude", "FLOAT"),
     bigquery.SchemaField("Longitude", "FLOAT"),
-    bigquery.SchemaField("Address_ID", "INTEGER"),
-    bigquery.SchemaField("ObjectId", "INTEGER"),
     bigquery.SchemaField("Zip_Code", "STRING")
 ]
 
