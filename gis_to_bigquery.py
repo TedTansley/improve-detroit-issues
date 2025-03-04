@@ -6,6 +6,7 @@ from google.oauth2.service_account import Credentials
 from google.cloud import bigquery
 from requests.exceptions import RequestException
 from google.api_core.exceptions import GoogleAPICallError, NotFound, Forbidden
+import tempfile
 
 
 # Load credentials from environment variables
@@ -119,6 +120,9 @@ def fetch_gis_data():
     else:
         print("No GIS data found to update.")
 
+import tempfile
+import os
+
 def update_bigquery(all_data):
     client = bigquery.Client(credentials=creds, project=PROJECT_ID)
     table_ref = bigquery.TableReference.from_string(f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}")
@@ -135,24 +139,44 @@ def update_bigquery(all_data):
     # Prepare data for insertion
     rows_to_insert = [{key: record[key] for key in record} for record in all_data]
 
-    # Define batch size (e.g., 500 rows per insert)
-    BATCH_SIZE = 500  
+    # Save the rows to a temporary JSON file
+    with tempfile.NamedTemporaryFile(delete=False, mode="w", newline="") as temp_file:
+        temp_file_path = temp_file.name
+        # Save the data as JSON in the temporary file
+        json.dump(rows_to_insert, temp_file)
 
-    # Insert data in batches
-    for i in range(0, len(rows_to_insert), BATCH_SIZE):
-        batch = rows_to_insert[i:i + BATCH_SIZE]  # Get the next batch of rows to insert
+    # Load data from the temporary file into BigQuery
+    try:
+        # Create a URI pointing to the temporary file
+        uri = f"gs://{PROJECT_ID}/temp/{os.path.basename(temp_file_path)}"
+        
+        # Upload the file to Google Cloud Storage
+        storage_client = storage.Client(credentials=creds)
+        bucket = storage_client.bucket(f"{PROJECT_ID}")
+        blob = bucket.blob(f"temp/{os.path.basename(temp_file_path)}")
+        blob.upload_from_filename(temp_file_path)
 
-        try:
-            # Insert the batch into BigQuery
-            errors = client.insert_rows_json(table, batch)
-            if not errors:
-                print(f"Batch {i // BATCH_SIZE + 1}: Data inserted successfully!")
-            else:
-                print(f"Batch {i // BATCH_SIZE + 1}: Errors occurred while inserting data: {errors}")
-        except GoogleAPICallError as e:
-            print(f"BigQuery API Error in Batch {i // BATCH_SIZE + 1}: {e}")
-        except Forbidden:
-            print(f"Permission error! Ensure your service account has BigQuery write access.")
+        # Load data into BigQuery from the Google Cloud Storage URI
+        job_config = bigquery.LoadJobConfig(
+            schema=schema,
+            source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON
+        )
+        
+        load_job = client.load_table_from_uri(
+            uri,
+            table_ref,
+            job_config=job_config
+        )  # Make sure to pass the job config for proper schema handling
+
+        load_job.result()  # Wait for the load job to complete
+        print(f"Data loaded successfully from {uri} to BigQuery!")
+
+    except Exception as e:
+        print(f"Error loading data from file to BigQuery: {e}")
+    finally:
+        # Clean up the temporary file
+        os.remove(temp_file_path)
+
 
 
 if __name__ == "__main__":
