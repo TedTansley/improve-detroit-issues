@@ -46,7 +46,7 @@ params = {
     "geometryType": "esriGeometryEnvelope",
     "geometry": None,  # Specify geometry if needed
     "inSR": "102100",
-    "outFields": "ID,Status,Request_Type_Title,Report_Method,Created_At,Acknowledged_At,Closed_At,Reopened_At,Updated_At,Days_to_Close,Address,Neighborhood,Council_District,Latitude,Longitude,ObjectId,Zip_Code",    
+    "outFields": "ID,Status,Request_Type_Title,Report_Method,Created_At,Acknowledged_At,Closed_At,Reopened_At,Updated_At,Days_to_Close,Address,Neighborhood,Council_District,Latitude,Longitude,Zip_Code",    
     "orderByFields": "objectid ASC",
     "outSR": "102100",
     "resultRecordCount": 1000,  # Records per request
