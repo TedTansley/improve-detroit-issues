@@ -120,7 +120,7 @@ def handle_invalid_data(df):
     for column in df.columns:
         if df[column].isnull().any():
             print(f"Missing data in column: {column}")
-            df[column].fillna('N/A', inplace=True)  # Replace NaN values with 'N/A' or a default value
+            df[column].fillna('N/A')  # Replace NaN values with 'N/A' or a default value
 
     # Convert milliseconds to seconds for timestamp fields (if they are in milliseconds)
     timestamp_columns = ['Created_At', 'Acknowledged_At', 'Closed_At', 'Reopened_At', 'Updated_At']
