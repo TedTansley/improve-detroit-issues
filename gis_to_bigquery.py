@@ -13,7 +13,9 @@ import tempfile
 service_account_info = json.loads(os.getenv("GCP_SERVICE_ACCOUNT_JSON"))
 creds = Credentials.from_service_account_info(
     service_account_info,
-    scopes=["https://www.googleapis.com/auth/bigquery"]
+    scopes=["https://www.googleapis.com/auth/cloud-platform",  # Broadest scope for all GCP services
+            "https://www.googleapis.com/auth/bigquery",  # For BigQuery
+            "https://www.googleapis.com/auth/devstorage.full_control"]  # For Google Cloud Storage
 )
 
 # BigQuery setup
