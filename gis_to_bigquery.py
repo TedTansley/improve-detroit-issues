@@ -121,9 +121,26 @@ def fetch_gis_data():
         print("No GIS data found to update.")
 
 
+def handle_invalid_timestamps(df):
+    # Convert milliseconds to seconds for timestamp fields (if they are in milliseconds)
+    timestamp_columns = ['Created_At', 'Acknowledged_At', 'Closed_At', 'Reopened_At', 'Updated_At']
+    
+    for column in timestamp_columns:
+        if column in df.columns:
+            # Convert the timestamp from milliseconds to seconds
+            df[column] = pd.to_datetime(df[column], errors='coerce', unit='ms')  # Coerce invalid values to NaT (Not a Time)
+    
+    # Optionally, replace NaT (invalid timestamps) with a default valid timestamp or drop them
+    df.fillna({col: pd.to_datetime('1970-01-01') for col in timestamp_columns}, inplace=True)  # Fill NaT with a default date
+    
+    return df
+
 def save_to_csv(all_data):
     # Convert data to DataFrame
     df = pd.DataFrame(all_data)
+
+    # Handle invalid timestamps and convert to valid ones
+    df = handle_invalid_timestamps(df)
 
     # Save DataFrame to CSV
     local_csv_path = "/tmp/gis_data.csv"  # Temporary path for CSV file
