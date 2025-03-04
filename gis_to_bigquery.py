@@ -3,7 +3,7 @@ import json
 import requests
 import time
 from google.oauth2.service_account import Credentials
-from google.cloud import bigquery
+from google.cloud import bigquery, storage
 from requests.exceptions import RequestException
 from google.api_core.exceptions import GoogleAPICallError, NotFound, Forbidden
 import tempfile
