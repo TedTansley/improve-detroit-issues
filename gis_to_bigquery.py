@@ -121,7 +121,7 @@ def fetch_gis_data():
 
 def update_bigquery(all_data):
     client = bigquery.Client(credentials=creds, project=PROJECT_ID)
-    table_ref = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
+    table_ref = bigquery.TableReference.from_string(f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}")
 
     try:
         table = client.get_table(table_ref)  # Get table metadata
@@ -133,19 +133,27 @@ def update_bigquery(all_data):
         print(f"Table {TABLE_ID} created successfully.")
 
     # Prepare data for insertion
-    rows_to_insert = [{key: record.get(key, None) for key in record.keys()} for record in all_data]
+    rows_to_insert = [{key: record[key] for key in record} for record in all_data]
 
-    # Insert data into BigQuery table
-    try:
-        errors = client.insert_rows_json(table, rows_to_insert)
-        if not errors:
-            print(f"Data inserted into BigQuery table {DATASET_ID}.{TABLE_ID} successfully!")
-        else:
-            print(f"Errors occurred while inserting data into BigQuery: {errors}")
-    except GoogleAPICallError as e:
-        print(f"BigQuery API Error: {e}")
-    except Forbidden:
-        print(f"Permission error! Ensure your service account has BigQuery write access.")
+    # Define batch size (e.g., 500 rows per insert)
+    BATCH_SIZE = 500  
+
+    # Insert data in batches
+    for i in range(0, len(rows_to_insert), BATCH_SIZE):
+        batch = rows_to_insert[i:i + BATCH_SIZE]  # Get the next batch of rows to insert
+
+        try:
+            # Insert the batch into BigQuery
+            errors = client.insert_rows_json(table, batch)
+            if not errors:
+                print(f"Batch {i // BATCH_SIZE + 1}: Data inserted successfully!")
+            else:
+                print(f"Batch {i // BATCH_SIZE + 1}: Errors occurred while inserting data: {errors}")
+        except GoogleAPICallError as e:
+            print(f"BigQuery API Error in Batch {i // BATCH_SIZE + 1}: {e}")
+        except Forbidden:
+            print(f"Permission error! Ensure your service account has BigQuery write access.")
+
 
 if __name__ == "__main__":
     fetch_gis_data()
