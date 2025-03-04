@@ -135,9 +135,11 @@ def handle_invalid_data(df):
     
     # Handle 'Days_to_Close' column (convert to float and round to 2 decimal places)
     if 'Days_to_Close' in df.columns:
+        df['Days_to_Close'] = pd.to_numeric(df['Days_to_Close'], errors='coerce')  # Convert to numeric, invalid values become NaN
         df['Days_to_Close'] = df['Days_to_Close'].apply(lambda x: round(x, 2) if pd.notnull(x) else None)
 
     return df
+
 
 
 def save_to_csv(all_data):
