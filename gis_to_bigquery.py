@@ -122,6 +122,12 @@ def fetch_gis_data():
 
 
 def handle_invalid_data(df):
+    # Handle missing data: Replace NaN values in any column with 'N/A'
+    for column in df.columns:
+        if df[column].isnull().any():
+            print(f"Missing data in column: {column}")
+            df[column].fillna('N/A', inplace=True)  # Replace NaN values with 'N/A' or a default value
+
     # Convert milliseconds to seconds for timestamp fields (if they are in milliseconds)
     timestamp_columns = ['Created_At', 'Acknowledged_At', 'Closed_At', 'Reopened_At', 'Updated_At']
     
@@ -130,17 +136,24 @@ def handle_invalid_data(df):
             # Convert the timestamp from milliseconds to seconds
             df[column] = pd.to_datetime(df[column], errors='coerce', unit='ms')  # Coerce invalid values to NaT (Not a Time)
     
-    # Optionally, replace NaT (invalid timestamps) with a default valid timestamp or drop them
-    df.fillna({col: pd.to_datetime('1970-01-01') for col in timestamp_columns}, inplace=True)  # Fill NaT with a default date
-    
+    # Handle non-standard timestamp conversion (if you have other non-standard formats)
+    def handle_non_standard_timestamp(df, column, format=None):
+        if format:
+            df[column] = pd.to_datetime(df[column], format=format, errors='coerce')  # Apply specific format
+        else:
+            df[column] = pd.to_datetime(df[column], errors='coerce')  # Try default parsing
+        return df
+
+    # Handle 'Priority_Code' column (convert to numeric)
+    if 'Priority_Code' in df.columns:
+        df['Priority_Code'] = pd.to_numeric(df['Priority_Code'], errors='coerce')  # Convert to numeric and handle errors
+
     # Handle 'Days_to_Close' column (convert to float and round to 2 decimal places)
     if 'Days_to_Close' in df.columns:
         df['Days_to_Close'] = pd.to_numeric(df['Days_to_Close'], errors='coerce')  # Convert to numeric, invalid values become NaN
         df['Days_to_Close'] = df['Days_to_Close'].apply(lambda x: round(x, 2) if pd.notnull(x) else None)
 
     return df
-
-
 
 def save_to_csv(all_data):
     # Convert data to DataFrame
