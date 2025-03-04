@@ -17,6 +17,16 @@ creds = Credentials.from_service_account_info(
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 GIS_URL = os.getenv("GIS_REST_URL")
 
+if not service_account_info:
+    raise ValueError("Missing GCP_SERVICE_ACCOUNT_JSON environment variable.")
+
+if not SPREADSHEET_ID:
+    raise ValueError("Missing SPREADSHEET_ID environment variable.")
+
+if not GIS_URL:
+    raise ValueError("Missing GIS_REST_URL environment variable.")
+
+
 # Parameters to fetch all records
 params = {
     "f": "json",
@@ -73,7 +83,6 @@ def fetch_gis_data():
                     attributes = feature["attributes"]
                     all_data.append(attributes)
                 offset += len(data["features"])  # Increment offset for the next batch
-                time.sleep(1)  # Delay to avoid rate limits
             else:
                 print("No more records to fetch.")
                 break
@@ -85,7 +94,7 @@ def fetch_gis_data():
 
 def update_google_sheet(all_data):
     client = gspread.authorize(creds)
-    sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+    sheet = client.open_by_key(SPREADSHEET_ID).worksheet("Sheet1")
     sheet.clear()  # Clears previous data
 
     if all_data:
@@ -96,7 +105,6 @@ def update_google_sheet(all_data):
             row = [record.get(header, '') for header in headers]
             if not safe_sheet_append(sheet, row):
                 print(f"Failed to append row: {row}. Skipping.")
-            time.sleep(0.1)  # Delay between row insertions
         
         print(f"GIS Data Updated Successfully with {len(all_data)} records!")
     else:
