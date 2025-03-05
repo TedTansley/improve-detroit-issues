@@ -46,7 +46,7 @@ params = {
     "geometryType": "esriGeometryEnvelope",
     "geometry": None,  # Specify geometry if needed
     "inSR": "102100",
-    "outFields": "ID,Status,Request_Type_Title,Report_Method,Created_At,Acknowledged_At,Closed_At,Reopened_At,Updated_At,Days_to_Close,Address,Neighborhood,Council_District,Latitude,Longitude,Zip_Code",    
+    "outFields": "*",  # Fetch all fields
     "orderByFields": "objectid ASC",
     "outSR": "102100",
     "resultRecordCount": 1000,  # Records per request
@@ -62,13 +62,13 @@ schema = [
     bigquery.SchemaField("Closed_At", "TIMESTAMP"),
     bigquery.SchemaField("Reopened_At", "TIMESTAMP"),
     bigquery.SchemaField("Updated_At", "TIMESTAMP"),
-    bigquery.SchemaField("Days_to_Close", "NUMERIC"),
+    bigquery.SchemaField("Days_to_Close", "STRING"),
     bigquery.SchemaField("Address", "STRING"),
     bigquery.SchemaField("Neighborhood", "STRING"),
     bigquery.SchemaField("Council_District", "INTEGER"),
-    bigquery.SchemaField("Latitude", "FLOAT"),
-    bigquery.SchemaField("Longitude", "FLOAT"),
-    bigquery.SchemaField("Zip_Code", "NUMERIC")
+    bigquery.SchemaField("Latitude", "NUMERIC"),
+    bigquery.SchemaField("Longitude", "NUMERIC"),
+    bigquery.SchemaField("Zip_Code", "STRING")
 ]
 
 
@@ -116,12 +116,6 @@ def fetch_gis_data():
 
 
 def handle_invalid_data(df):
-    # Handle missing data: Replace NaN values in any column with 'N/A'
-    for column in df.columns:
-        if df[column].isnull().any():
-            print(f"Missing data in column: {column}")
-            df[column].fillna('N/A')  # Replace NaN values with 'N/A' or a default value
-
     # Convert milliseconds to seconds for timestamp fields (if they are in milliseconds)
     timestamp_columns = ['Created_At', 'Acknowledged_At', 'Closed_At', 'Reopened_At', 'Updated_At']
     
@@ -129,19 +123,6 @@ def handle_invalid_data(df):
         if column in df.columns:
             # Convert the timestamp from milliseconds to seconds
             df[column] = pd.to_datetime(df[column], errors='coerce', unit='ms')  # Coerce invalid values to NaT (Not a Time)
-    
-    # Handle non-standard timestamp conversion (if you have other non-standard formats)
-    def handle_non_standard_timestamp(df, column, format=None):
-        if format:
-            df[column] = pd.to_datetime(df[column], format=format, errors='coerce')  # Apply specific format
-        else:
-            df[column] = pd.to_datetime(df[column], errors='coerce')  # Try default parsing
-        return df
-
-    # Handle 'Days_to_Close' column (convert to float and round to 2 decimal places)
-    if 'Days_to_Close' in df.columns:
-        df['Days_to_Close'] = pd.to_numeric(df['Days_to_Close'], errors='coerce')  # Convert to numeric, invalid values become NaN
-        df['Days_to_Close'] = df['Days_to_Close'].apply(lambda x: round(x, 2) if pd.notnull(x) else None)
 
     return df
 
@@ -151,6 +132,7 @@ def save_to_csv(all_data):
 
     # Handle invalid timestamps and convert to valid ones
     df = handle_invalid_data(df)
+    df = df.drop(columns=["Description", "Web_Url","Canonical_Issue_ID","Address_ID","ObjectId"])
 
     # Save DataFrame to CSV
     local_csv_path = "/tmp/gis_data.csv"  # Temporary path for CSV file
