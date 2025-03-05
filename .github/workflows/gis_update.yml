@@ -2,7 +2,7 @@ name: Fetch GIS Data and Update Google BigQuery
 
 on:
   schedule:
-    - cron: '0 0/24 * * *'  # Runs every hour
+    - cron: '0 0/24 * * *'  # Runs every 24 hour
   workflow_dispatch:  # Allows manual runs
 
 jobs:
