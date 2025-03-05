@@ -132,10 +132,11 @@ def save_to_csv(all_data):
     # Handle invalid timestamps and convert to valid ones
     df = handle_invalid_data(df)
     df.drop(columns=["Description", "Web_Url","Canonical_Issue_ID","Address_ID","ObjectId","Priority_Code"], inplace=True)
+    df = df.replace({r'\r\n': ' ', r'\n': ' '}, regex=True)
 
     # Save DataFrame to CSV
     local_csv_path = "/tmp/gis_data.csv"  # Temporary path for CSV file
-    df.to_csv(local_csv_path, index=False)
+    df.to_csv(local_csv_path, index=False, quoting=csv.QUOTE_ALL)
 
     print(f"Data saved as CSV at {local_csv_path}")
     update_bigquery_from_csv(local_csv_path)
