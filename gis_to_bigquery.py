@@ -68,7 +68,7 @@ schema = [
     bigquery.SchemaField("Council_District", "INTEGER"),
     bigquery.SchemaField("Latitude", "FLOAT"),
     bigquery.SchemaField("Longitude", "FLOAT"),
-    bigquery.SchemaField("Zip_Code", "STRING")
+    bigquery.SchemaField("Zip_Code", "NUMERIC")
 ]
 
 
@@ -137,10 +137,6 @@ def handle_invalid_data(df):
         else:
             df[column] = pd.to_datetime(df[column], errors='coerce')  # Try default parsing
         return df
-
-    # Handle 'Priority_Code' column (convert to numeric)
-    if 'Priority_Code' in df.columns:
-        df['Priority_Code'] = pd.to_numeric(df['Priority_Code'], errors='coerce')  # Convert to numeric and handle errors
 
     # Handle 'Days_to_Close' column (convert to float and round to 2 decimal places)
     if 'Days_to_Close' in df.columns:
