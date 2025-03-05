@@ -66,8 +66,8 @@ schema = [
     bigquery.SchemaField("Address", "STRING"),
     bigquery.SchemaField("Neighborhood", "STRING"),
     bigquery.SchemaField("Council_District", "STRING"),
-    bigquery.SchemaField("Latitude", "NUMERIC"),
-    bigquery.SchemaField("Longitude", "NUMERIC"),
+    bigquery.SchemaField("Latitude", "BIGNUMERIC"),
+    bigquery.SchemaField("Longitude", "BIGNUMERIC"),
     bigquery.SchemaField("Zip_Code", "STRING")
 ]
 
