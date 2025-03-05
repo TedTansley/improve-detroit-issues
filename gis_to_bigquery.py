@@ -123,8 +123,6 @@ def handle_invalid_data(df):
         if column in df.columns:
             # Convert the timestamp from milliseconds to seconds
             df[column] = pd.to_datetime(df[column], errors='coerce', unit='ms')  # Coerce invalid values to NaT (Not a Time)
-    # Fill missing values with None (which BigQuery will interpret as NULL)
-    df.fillna(value="Unknown", inplace=True)
     return df
 
 def save_to_csv(all_data):
@@ -137,7 +135,7 @@ def save_to_csv(all_data):
 
     # Save DataFrame to CSV
     local_csv_path = "/tmp/gis_data.csv"  # Temporary path for CSV file
-    df.to_csv(local_csv_path, index=False, na_rep="Null")
+    df.to_csv(local_csv_path, index=False)
 
     print(f"Data saved as CSV at {local_csv_path}")
     update_bigquery_from_csv(local_csv_path)
@@ -162,7 +160,6 @@ def update_bigquery_from_csv(csv_file_path):
         schema=schema,
         source_format=bigquery.SourceFormat.CSV,
         skip_leading_rows=1,  # Skip header row
-        autodetect=True,  # Automatically detect schema
     )
 
     with open(csv_file_path, "rb") as source_file:
