@@ -65,7 +65,7 @@ schema = [
     bigquery.SchemaField("Days_to_Close", "STRING"),
     bigquery.SchemaField("Address", "STRING"),
     bigquery.SchemaField("Neighborhood", "STRING"),
-    bigquery.SchemaField("Council_District", "INTEGER"),
+    bigquery.SchemaField("Council_District", "STRING"),
     bigquery.SchemaField("Latitude", "NUMERIC"),
     bigquery.SchemaField("Longitude", "NUMERIC"),
     bigquery.SchemaField("Zip_Code", "STRING")
@@ -123,20 +123,21 @@ def handle_invalid_data(df):
         if column in df.columns:
             # Convert the timestamp from milliseconds to seconds
             df[column] = pd.to_datetime(df[column], errors='coerce', unit='ms')  # Coerce invalid values to NaT (Not a Time)
-
+    # Fill missing values with None (which BigQuery will interpret as NULL)
+    df.fillna(value=None, inplace=True)
     return df
 
 def save_to_csv(all_data):
-    # Convert data to DataFrame
     df = pd.DataFrame(all_data)
-
+    print(df.columns)
+    print(df.head())
     # Handle invalid timestamps and convert to valid ones
     df = handle_invalid_data(df)
     df.drop(columns=["Description", "Web_Url","Canonical_Issue_ID","Address_ID","ObjectId"], inplace=True)
 
     # Save DataFrame to CSV
     local_csv_path = "/tmp/gis_data.csv"  # Temporary path for CSV file
-    df.to_csv(local_csv_path, index=False)
+    df.to_csv(local_csv_path, index=False, na_rep="Null")
 
     print(f"Data saved as CSV at {local_csv_path}")
     update_bigquery_from_csv(local_csv_path)
