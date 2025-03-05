@@ -7,6 +7,8 @@ from google.oauth2.service_account import Credentials
 from google.cloud import bigquery
 from requests.exceptions import RequestException
 from google.api_core.exceptions import GoogleAPICallError, NotFound, Forbidden
+import csv
+
 
 # Load credentials from environment variables
 service_account_info = json.loads(os.getenv("GCP_SERVICE_ACCOUNT_JSON"))
