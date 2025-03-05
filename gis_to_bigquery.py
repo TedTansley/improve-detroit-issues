@@ -124,7 +124,7 @@ def handle_invalid_data(df):
             # Convert the timestamp from milliseconds to seconds
             df[column] = pd.to_datetime(df[column], errors='coerce', unit='ms')  # Coerce invalid values to NaT (Not a Time)
     # Fill missing values with None (which BigQuery will interpret as NULL)
-    df.fillna(value=None, inplace=True)
+    df.fillna(value="Unknown", inplace=True)
     return df
 
 def save_to_csv(all_data):
