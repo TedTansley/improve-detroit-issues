@@ -132,7 +132,7 @@ def save_to_csv(all_data):
 
     # Handle invalid timestamps and convert to valid ones
     df = handle_invalid_data(df)
-    df = df.drop(columns=["Description", "Web_Url","Canonical_Issue_ID","Address_ID","ObjectId"])
+    df = df.drop(columns=["Description", "Web_Url","Canonical_Issue_ID","Address_ID","ObjectId"], inplace=True)
 
     # Save DataFrame to CSV
     local_csv_path = "/tmp/gis_data.csv"  # Temporary path for CSV file
