@@ -64,7 +64,7 @@ schema = [
     bigquery.SchemaField("Closed_At", "TIMESTAMP"),
     bigquery.SchemaField("Reopened_At", "TIMESTAMP"),
     bigquery.SchemaField("Updated_At", "TIMESTAMP"),
-    bigquery.SchemaField("Days_to_Close", "STRING"),
+    bigquery.SchemaField("Days_to_Close", "FLOAT"),
     bigquery.SchemaField("Address", "STRING"),
     bigquery.SchemaField("Neighborhood", "STRING"),
     bigquery.SchemaField("Council_District", "STRING"),
@@ -125,6 +125,9 @@ def handle_invalid_data(df):
         if column in df.columns:
             # Convert the timestamp from milliseconds to seconds
             df[column] = pd.to_datetime(df[column], errors='coerce', unit='ms')  # Coerce invalid values to NaT (Not a Time)
+    # Convert Days_to_Close to numeric, coercing non-numeric values to NaN
+    if 'Days_to_Close' in df.columns:
+        df['Days_to_Close'] = pd.to_numeric(df['Days_to_Close'], errors='coerce')
     return df
 
 def save_to_csv(all_data):
