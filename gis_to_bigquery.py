@@ -163,6 +163,7 @@ def update_bigquery_from_csv(csv_file_path):
         schema=schema,
         source_format=bigquery.SourceFormat.CSV,
         skip_leading_rows=1,  # Skip header row
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE  # Overwrites existing data
     )
 
     with open(csv_file_path, "rb") as source_file:
