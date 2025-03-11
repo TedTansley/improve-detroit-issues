@@ -11,4 +11,4 @@ https://lookerstudio.google.com/reporting/d3b7021b-98d9-42a6-893a-0d2476daec7a
   -  Record/Report count
 - District Pages with year over year KPIs and heatmap
   - Permits filtering by neighborhood, zip code, report status, and date range
-- Null District page available to identify reported issues that did not receive location information
+- Null District page available to identify reported issues that did not receive City District information
