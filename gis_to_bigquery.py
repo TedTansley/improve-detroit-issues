@@ -70,6 +70,7 @@ schema = [
     bigquery.SchemaField("Council_District", "STRING"),
     bigquery.SchemaField("Latitude", "BIGNUMERIC"),
     bigquery.SchemaField("Longitude", "BIGNUMERIC"),
+    bigquery.SchemaField("Location", "GEOGRAPHY"),
     bigquery.SchemaField("Zip_Code", "STRING")
 ]
 
@@ -112,12 +113,14 @@ def fetch_gis_data():
             break
 
     if all_data:
-        save_to_csv(all_data)
+        dataframe_design(all_data)
     else:
         print("No GIS data found to update.")
 
 
-def handle_invalid_data(df):
+def handle_data(df):
+    #create Location row
+    df['Location'] = df.apply(lambda row: f"POINT({row['Longitude']} {row['Latitude']})" if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']) else None, axis=1)
     # Convert milliseconds to seconds for timestamp fields (if they are in milliseconds)
     timestamp_columns = ['Created_At', 'Acknowledged_At', 'Closed_At', 'Reopened_At', 'Updated_At']
     
@@ -130,6 +133,52 @@ def handle_invalid_data(df):
         df['Days_to_Close'] = pd.to_numeric(df['Days_to_Close'], errors='coerce')
     return df
 
+def dataframe_design(all_data):
+    df = pd.DataFrame(all_data)
+    print(df.columns)
+    print(df.head())
+    # Handle invalid timestamps and convert to valid ones
+    df = handle_data(df)
+    df.drop(columns=["Description", "Web_Url","Canonical_Issue_ID","Address_ID","ObjectId","Priority_Code"], inplace=True)
+    df = df.replace({r'\r\n': ' ', r'\n': ' '}, regex=True)
+    upload_dataframe_to_bigquery(df)
+
+def upload_dataframe_to_bigquery(df):
+    client = bigquery.Client(credentials=creds, project=PROJECT_ID)
+    table_ref = bigquery.TableReference.from_string(
+        f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
+    )
+
+    # Create table if it doesn't exist
+    try:
+        client.get_table(table_ref)
+    except NotFound:
+        table = bigquery.Table(table_ref, schema=schema)
+        client.create_table(table)
+
+    # Configure load job for DataFrame
+    job_config = bigquery.LoadJobConfig(
+        schema=schema,                   
+        write_disposition="WRITE_TRUNCATE"
+    )
+
+    # Upload directly from pandas
+    load_job = client.load_table_from_dataframe(df, table_ref, job_config=job_config)
+    load_job.result()
+    print("Upload complete!")
+    
+'''def handle_invalid_data(df):
+    # Convert milliseconds to seconds for timestamp fields (if they are in milliseconds)
+    timestamp_columns = ['Created_At', 'Acknowledged_At', 'Closed_At', 'Reopened_At', 'Updated_At']
+    
+    for column in timestamp_columns:
+        if column in df.columns:
+            # Convert the timestamp from milliseconds to seconds
+            df[column] = pd.to_datetime(df[column], errors='coerce', unit='ms')  # Coerce invalid values to NaT (Not a Time)
+    # Convert Days_to_Close to numeric, coercing non-numeric values to NaN
+    if 'Days_to_Close' in df.columns:
+        df['Days_to_Close'] = pd.to_numeric(df['Days_to_Close'], errors='coerce')
+    return df
 def save_to_csv(all_data):
     df = pd.DataFrame(all_data)
     print(df.columns)
@@ -178,7 +227,10 @@ def update_bigquery_from_csv(csv_file_path):
     print(f"Data loaded successfully from {csv_file_path} to BigQuery!")
 
     # Clean up the temporary CSV file
-    os.remove(csv_file_path)
+    os.remove(csv_file_path)'''
+
+
+
 
 
 if __name__ == "__main__":
