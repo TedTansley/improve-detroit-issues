@@ -136,11 +136,9 @@ def save_to_csv(all_data):
     # Handle invalid timestamps and convert to valid ones
     df = handle_invalid_data(df)
     df['Location'] = df.apply(
-        lambda r: f"POINT({r['Longitude']} {r['Latitude']})"
-                  if pd.notnull(r['Longitude']) and pd.notnull(r['Latitude'])
-                  else None,
-        axis=1
-    )
+    lambda r: f"POINT({r['Longitude']} {r['Latitude']})"
+    if pd.notnull(r['Latitude']) and pd.notnull(r['Longitude']) else '',
+    axis=1)
     df.drop(columns=["Description", "Web_Url","Canonical_Issue_ID","Address_ID","ObjectId","Priority_Code"], inplace=True)
     df = df.replace({r'\r\n': ' ', r'\n': ' '}, regex=True)
 
