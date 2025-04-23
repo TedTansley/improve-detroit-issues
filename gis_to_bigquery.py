@@ -120,7 +120,17 @@ def fetch_gis_data():
 
 def handle_data(df):
     #create Location row
-    df['Location'] = df.apply(lambda row: f"POINT({row['Longitude']} {row['Latitude']})" if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']) else None, axis=1)
+    # Ensure Location is clean
+    df['Location'] = df.apply(lambda row: f"POINT({row['Longitude']} {row['Latitude']})" 
+                          if pd.notnull(row['Latitude']) and pd.notnull(row['Longitude']) 
+                          else None, axis=1)
+    
+    # Force Location to be a string type
+    df['Location'] = df['Location'].astype(str)
+    
+    # If Location isn't valid WKT, set to None
+    df['Location'] = df['Location'].where(df['Location'].str.startswith('POINT'), None)
+
     df['ID'] = pd.to_numeric(df['ID'], errors='coerce')
     # Convert milliseconds to seconds for timestamp fields (if they are in milliseconds)
     timestamp_columns = ['Created_At', 'Acknowledged_At', 'Closed_At', 'Reopened_At', 'Updated_At']
