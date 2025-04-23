@@ -141,6 +141,8 @@ def save_to_csv(all_data):
     axis=1)
     df.drop(columns=["Description", "Web_Url","Canonical_Issue_ID","Address_ID","ObjectId","Priority_Code"], inplace=True)
     df = df.replace({r'\r\n': ' ', r'\n': ' '}, regex=True)
+    # Ensure columns are ordered to match the schema
+    df = df[[f.name for f in schema]]
 
     # Save DataFrame to CSV
     local_csv_path = "/tmp/gis_data.csv"  # Temporary path for CSV file
