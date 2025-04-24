@@ -20,6 +20,7 @@ Getting reported issues from Improve Detroit and sending them to a Google BigQue
 | Latitude  | BIGNUMERIC  |
 | Longitude  | BIGNUMERIC  |
 | Zip_Code  | STRING  |
+| Location  | GEOGRAPHY | 
 
 
 ## Looker Dashboard
